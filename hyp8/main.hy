@@ -1,6 +1,7 @@
 (require [hy.contrib.walk [let]])
 
 (import [hyp8.display [Display]])
+(import [hyp8.keyboard [Keyboard]])
 (import [tkinter [Frame Menu Tk]])
 
 
@@ -39,7 +40,16 @@
       (.add-cascade self.menubar :label menu-label :menu menu)))
 
   (defn init-emulator [self]
-    (setv self.display (Display self))))
+    ;; Initialize the various emulation modules.
+    (setv self.display (Display self))
+    (setv self.keyboard (Keyboard))
+    ;; Tie the key press and release events to their respective keypad
+    ;; emulator functions. Forcing `char` to lowercase ensures that this will
+    ;; still work if caps lock is enabled.
+    (.bind self.parent "<Key>"
+                       (fn [e] (.press self.keyboard (.lower e.char))))
+    (.bind self.parent "<KeyRelease>"
+                       (fn [e] (.release self.keyboard (.lower e.char))))))
 
 
 (defmain [&rest args]
