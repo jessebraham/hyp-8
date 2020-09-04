@@ -1,0 +1,9 @@
+# Virtual environment
+venv/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# Visual Studio Code config
+.vscode/
