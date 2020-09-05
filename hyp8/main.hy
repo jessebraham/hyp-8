@@ -1,33 +1,35 @@
 (require [hy.contrib.walk [let]])
 
-(import [hyp8.display [Display]])
-(import [hyp8.keyboard [Keyboard]])
-(import [tkinter [Frame Menu Tk]])
+(import [hyp8.chip8 [Chip8]])
+(import [tkinter [filedialog messagebox Frame Menu Tk]])
 
 
 (defclass Window [Frame]
   """
   Define the main application window. This class ties the GUI together with
-  the actual emulator and, enables interaction with it in a meaningful way.
+  the actual emulator and enables interaction with it in a meaningful way.
+
+  Handles loading ROMs from the filesystem, then loading their bytes into the
+  emulated device memory.
   """
 
-  (defn __init__ [self parent]
-    (.__init__ Frame self parent)
-    (setv self.parent parent)
+  (defn __init__ [self root]
+    (.__init__ Frame self root)
+    (setv self.root root)
     (.init-window self)
     (.init-menubar self)
-    (.init-emulator self))
+    (setv self.chip8 (Chip8 self)))
 
   (defn init-window [self]
-    (.title self.parent "Hyp-8")
-    (.resizable self.parent False False)
+    (.title self.root "Hyp-8")
+    (.resizable self.root False False)
     (.pack self))
 
   (defn init-menubar [self]
-    (setv self.menubar (Menu self.parent))
-    (.config self.parent :menu self.menubar)
+    (setv self.menubar (Menu self.root))
+    (.config self.root :menu self.menubar)
     ;; TODO: add `:command` for remaining menu items
-    (.create-menu self "File" ["Open" None]
+    (.create-menu self "File" ["Open" self.open-file-dialog]
                               ["Exit" exit])
     (.create-menu self "Edit" ["Reset"    None]
                               ["Settings" None])
@@ -39,17 +41,26 @@
         (.add-command menu :label label :command command))
       (.add-cascade self.menubar :label menu-label :menu menu)))
 
-  (defn init-emulator [self]
-    ;; Initialize the various emulation modules.
-    (setv self.display (Display self))
-    (setv self.keyboard (Keyboard))
-    ;; Tie the key press and release events to their respective keypad
-    ;; emulator functions. Forcing `char` to lowercase ensures that this will
-    ;; still work if caps lock is enabled.
-    (.bind self.parent "<Key>"
-                       (fn [e] (.press self.keyboard (.lower e.char))))
-    (.bind self.parent "<KeyRelease>"
-                       (fn [e] (.release self.keyboard (.lower e.char))))))
+  (defn open-file-dialog [self]
+    (let [filetypes [["Chip-8 Programs" "*.ch8"]]
+          file      (.askopenfilename filedialog :filetypes filetypes)]
+      (when file
+        (.load-rom self file))))
+
+  (defn load-rom [self file]
+    (.reset self.chip8)
+    (try
+      (with [f (open file "rb")]
+        (.load-program self.chip8 (.read f)))
+        (.game-loop self)
+      (except [e Exception]
+        (.showerror messagebox :title "Error" :message (str e)))))
+
+  (defn game-loop [self]
+    (let [fps   30
+          delta (int (* (/ 1 fps) 1000))]
+      (.cycle self.chip8)
+      (.after self.root delta self.game-loop))))
 
 
 (defmain [&rest args]

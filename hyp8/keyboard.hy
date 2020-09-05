@@ -28,12 +28,17 @@ http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.3
   (setv *num-keys* 16)
   (setv key-states [])
 
-  (defn __init__ [self]
+  (defn __init__ [self root]
     """
-    The state of each key is represented by a boolean value indicating if that
-    key is currently pressed.
+    Initialize the key states, which are represented by boolean values
+    indicating if a particular key is currently pressed. Additionally set up
+    the key-related event handlers.
     """
-    (setv self.key-states (* [False] self.*num-keys*)))
+    (setv self.key-states (* [False] self.*num-keys*))
+    ;; Forcing `char` to lowercase ensures this will continue to work when
+    ;; caps lock is enabled.
+    (.bind root "<Key>" (fn [e] (.press self (.lower e.char))))
+    (.bind root "<KeyRelease>" (fn [e] (.release self (.lower e.char)))))
 
   (defn presssed? [self key]
     (if* (in key *keymap*)
