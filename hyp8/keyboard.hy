@@ -3,14 +3,6 @@ Keyboard
 http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.3
 """
 
-;; Maps from a keyboard character to the corresponding hex keypad digit.
-;; Eventually I would like for this to be configurable by the user.
-(setv *keymap* {"1" 0x1  "2" 0x2  "3" 0x3  "4" 0xC
-                "q" 0x4  "w" 0x5  "e" 0x6  "r" 0xD
-                "a" 0x7  "s" 0x8  "d" 0x9  "f" 0xE
-                "z" 0xA  "x" 0x0  "c" 0xB  "v" 0xF})
-
-
 (defclass Keyboard []
   """
   The computers which originally used the Chip-8 Language had a 16-key
@@ -28,6 +20,13 @@ http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.3
   (setv *num-keys* 16)
   (setv key-states [])
 
+  ;; Maps from a keyboard character to the corresponding hex keypad digit.
+  ;; Eventually I would like for this to be configurable by the user.
+  (setv *keymap* {"1" 0x1  "2" 0x2  "3" 0x3  "4" 0xC
+                  "q" 0x4  "w" 0x5  "e" 0x6  "r" 0xD
+                  "a" 0x7  "s" 0x8  "d" 0x9  "f" 0xE
+                  "z" 0xA  "x" 0x0  "c" 0xB  "v" 0xF})
+
   (defn __init__ [self root]
     """
     Initialize the key states, which are represented by boolean values
@@ -41,8 +40,8 @@ http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.3
     (.bind root "<KeyRelease>" (fn [e] (.release self (.lower e.char)))))
 
   (defn presssed? [self key]
-    (if* (in key *keymap*)
-      (get self.key-states (get *keymap* key))
+    (if* (in key self.*keymap*)
+      (get self.key-states (get self.*keymap* key))
       False))
 
   (defn press [self key]
@@ -52,5 +51,5 @@ http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.3
     (._set-key self key False))
 
   (defn _set-key [self key state]
-    (if (in key *keymap*)
-      (setv (get self.key-states (get *keymap* key)) state))))
+    (if (in key self.*keymap*)
+      (setv (get self.key-states (get self.*keymap* key)) state))))

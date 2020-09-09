@@ -5,7 +5,7 @@ http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.0
 
 (require [hy.contrib.walk [let]])
 
-(import [hyp8.display [*font-set* Display]])
+(import [hyp8.display [Display]])
 (import [hyp8.keyboard [Keyboard]])
 
 
@@ -35,38 +35,38 @@ http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.0
   (setv draw-flag False)
 
   (defn __init__ [self window]
-    ;; Initialize the various emulation modules.
+    ;; Initialize the various emulation modules and reset the internal state
+    ;; of the emulated device.
     (setv self.display (Display window))
     (setv self.keyboard (Keyboard window.root))
-    ;; Reset the internal state of the emulated device.
     (.reset self))
 
   (defn reset [self]
-    ;; Reset the memory and stack.
+    ;; Reset the memory, stack, registers, and timers.
     (setv self.memory (* [0] self.*memory-size*))
     (setv self.stack (* [0] self.*stack-size*))
-    ;; Reset the registers and timers.
-    (.init-registers self)
-    (.init-timers self)
-    ;; Reset the draw flag and clear the display. Load the font set into
-    ;; memory.
+    (._init-registers self)
+    (._init-timers self)
+    ;; Load the font set into memory.
+    (let [flatten (fn [l] (reduce + l))]
+      (._load-bytes self self.*bottom-addr* (flatten self.display.*font-set*)))
+    ;; Reset the draw flag and clear the display.
     (setv self.draw-flag False)
-    (.clear self.display)
-    (.load-bytes self self.*bottom-addr* *font-set*))
+    (.clear self.display))
 
-  (defn init-registers [self]
+  (defn load-program [self program]
+    (._load-bytes self self.*program-addr* program))
+
+  (defn _init-registers [self]
     (setv self.V  (* [0] self.*num-gp-regs*))
     (setv self.I  0)
-    (setv self.pc 0)
+    (setv self.pc self.*program-addr*)
     (setv self.sp 0))
 
-  (defn init-timers [self]
+  (defn _init-timers [self]
     (setv self.delay_timer 0)
     (setv self.sound_timer 0))
 
-  (defn load-program [self program]
-    (.load-bytes self self.*program-addr* program))
-
-  (defn load-bytes [self start-addr bytes]
+  (defn _load-bytes [self start-addr bytes]
     (for [[i byte] (enumerate bytes)]
       (setv (get self.memory (+ i start-addr)) byte))))
